@@ -1,4 +1,5 @@
-# Arch-Update-Script
+# update-system
+ 
 A one-command full update for Arch Linux gaming setups. It updates repo, AUR and Flatpak packages together and checks for the problems that tend to break games after an update.
  
 ## Why
@@ -18,7 +19,7 @@ This script handles all of that in a single run.
 | 0 | Checks that out-of-tree kernel modules exist for the running kernel and rebuilds their packages if they don't |
 | 1 | Shows unread Arch Linux news and asks whether to continue |
 | 2 | Creates a Timeshift snapshot before any changes |
-| 3 | Updates repo and AUR packages (`paru -Syu`) |
+| 3 | Updates repo and AUR packages (`paru -Syu` or `yay -Syu`) |
 | 4 | Updates Flatpak apps and runtimes |
 | 5 | Verifies Flatpak has the NVIDIA `GL` and `GL32` runtimes matching the system driver, and installs them if missing |
 | 6 | Lists `.pacnew` files that need merging |
@@ -27,7 +28,7 @@ This script handles all of that in a single run.
 ## Requirements
  
 - Arch Linux (or an Arch-based distro)
-- [`paru`](https://github.com/Morganamilo/paru), needed for AUR updates, news and module rebuilds. Without it the script falls back to `pacman` for updates.
+- An AUR helper: [`paru`](https://github.com/Morganamilo/paru) (preferred) or [`yay`](https://github.com/Jguer/yay). The script detects which one is installed and uses it for AUR updates, news and module rebuilds. Without either, it falls back to `pacman` for repo updates only.
 - `flatpak`
 - [`timeshift`](https://github.com/linuxmint/timeshift) *(optional)*. Use btrfs mode for fast snapshots.
 - `pacman-contrib` *(optional)*, which provides `pacdiff` for merging `.pacnew` files
@@ -98,3 +99,4 @@ DKMS packages (such as `nvidia-open-dkms`) don't need to be listed here, because
 ## License
  
 MIT
+ 
