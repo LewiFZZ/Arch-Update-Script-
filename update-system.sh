@@ -21,6 +21,15 @@ WATCH_PKGS="linux linux-lts nvidia-open-dkms nvidia-utils lib32-nvidia-utils mes
 # package is rebuilt when it's missing.
 MODULE_PKGS=("linux-switch2:hid-switch2")
 
+# AUR helper: paru preferred, yay supported
+if command -v paru >/dev/null; then
+  AUR_HELPER=paru;  AUR_REBUILD=(--rebuild)
+elif command -v yay >/dev/null; then
+  AUR_HELPER=yay;   AUR_REBUILD=(--rebuildall)
+else
+  AUR_HELPER="";    AUR_REBUILD=()
+fi
+
 pkg_versions() {
   for p in $WATCH_PKGS; do pacman -Q "$p" 2>/dev/null || true; done
 }
@@ -47,7 +56,11 @@ check_kernel_modules() {
       echo "  ✓ ${pkg}: ${mod} present for ${kver}"
     else
       warn "${pkg}: ${mod} missing for ${kver} — rebuilding"
-      if paru -S --rebuild --noconfirm "$pkg"; then
+      if [[ -z "$AUR_HELPER" ]]; then
+        fail "No AUR helper (paru/yay) found — rebuild ${pkg} manually"
+        continue
+      fi
+      if "$AUR_HELPER" -S "${AUR_REBUILD[@]}" --noconfirm "$pkg"; then
         sudo depmod -a "$kver"
         sudo modprobe "$mod" || warn "modprobe ${mod} failed — check dmesg"
         echo "  ✓ ${pkg} rebuilt — replug the device"
@@ -69,12 +82,12 @@ check_kernel_modules
 
 # 1. Arch news — manual intervention notices show up here
 step "Checking Arch Linux news"
-if command -v paru >/dev/null; then
-  paru -Pw || true
+if [[ -n "$AUR_HELPER" ]]; then
+  "$AUR_HELPER" -Pw || true
   read -rp "Read the news above? Continue with the update? [Y/n] " ans
   [[ "${ans,,}" == "n" ]] && { echo "Aborted."; exit 0; }
 else
-  warn "paru not found — check https://archlinux.org/news/ manually"
+  warn "No AUR helper found — check https://archlinux.org/news/ manually"
 fi
 
 # 2. Snapshot before touching anything
@@ -90,9 +103,10 @@ before=$(pkg_versions)
 
 # 3. Repo + AUR packages
 step "Updating repo and AUR packages"
-if command -v paru >/dev/null; then
-  paru -Syu
+if [[ -n "$AUR_HELPER" ]]; then
+  "$AUR_HELPER" -Syu
 else
+  warn "No AUR helper found — updating repo packages only"
   sudo pacman -Syu
 fi
 
